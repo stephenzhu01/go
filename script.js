@@ -8,6 +8,11 @@ const ctx = canvas.getContext("2d");
 const statusEl = document.getElementById("status");
 const capturesEl = document.getElementById("captures");
 const difficultyEl = document.getElementById("difficulty");
+const difficultyLabelEl = document.getElementById("difficulty-label");
+const languageEl = document.getElementById("language");
+const languageLabelEl = document.getElementById("language-label");
+const titleEl = document.getElementById("title");
+const subtitleEl = document.getElementById("subtitle");
 const newGameBtn = document.getElementById("new-game");
 const passBtn = document.getElementById("pass-btn");
 const undoBtn = document.getElementById("undo-btn");
@@ -23,6 +28,89 @@ let consecutivePasses = 0;
 let captures = { black: 0, white: 0 };
 let history = [];
 let boardHashes = new Set();
+let currentLang = languageEl.value;
+
+const I18N = {
+  "zh-Hant": {
+    pageTitle: "圍棋三難度",
+    title: "圍棋（人機對戰）",
+    subtitle: "黑棋先手（你），白棋後手（AI）",
+    difficultyLabel: "難度",
+    languageLabel: "語言",
+    newGame: "新遊戲",
+    pass: "停一手",
+    undo: "悔棋",
+    boardAria: "圍棋棋盤",
+    difficultyEasy: "簡單",
+    difficultyMedium: "中等",
+    difficultyHard: "困難",
+    yourTurn: "你的回合",
+    aiTurn: "AI 回合",
+    aiThinking: "AI 思考中...",
+    aiPassYourTurn: "AI 停一手，你的回合",
+    aiNoLegal: "AI 無合法落點，停一手。你的回合",
+    invalidMove: "該點不可落子（禁手、打劫或已有棋子）",
+    undoEnded: "已回退（對局已結束）",
+    captures: "提子：黑 {black} / 白 {white}",
+    difficultySwitched: "難度已切換為：{level}",
+    winnerBlack: "黑棋（你）",
+    winnerWhite: "白棋（AI）",
+    gameOver:
+      "對局結束，勝者：{winner}。估算：黑 {blackTotal}，白 {whiteTotal}（白貼目 6.5）",
+  },
+  en: {
+    pageTitle: "Go Game - 3 Levels",
+    title: "Go (Player vs AI)",
+    subtitle: "Black moves first (You), White moves second (AI)",
+    difficultyLabel: "Difficulty",
+    languageLabel: "Language",
+    newGame: "New Game",
+    pass: "Pass",
+    undo: "Undo",
+    boardAria: "Go board",
+    difficultyEasy: "Easy",
+    difficultyMedium: "Medium",
+    difficultyHard: "Hard",
+    yourTurn: "Your turn",
+    aiTurn: "AI turn",
+    aiThinking: "AI is thinking...",
+    aiPassYourTurn: "AI passes. Your turn",
+    aiNoLegal: "AI has no legal move and passes. Your turn",
+    invalidMove: "Illegal move (suicide, ko, or occupied point)",
+    undoEnded: "Undone (game had ended)",
+    captures: "Captures: Black {black} / White {white}",
+    difficultySwitched: "Difficulty switched to: {level}",
+    winnerBlack: "Black (You)",
+    winnerWhite: "White (AI)",
+    gameOver:
+      "Game over. Winner: {winner}. Estimate: Black {blackTotal}, White {whiteTotal} (White komi 6.5)",
+  },
+};
+
+function t(key, vars = {}) {
+  const dict = I18N[currentLang] || I18N["zh-Hant"];
+  const template = dict[key] ?? key;
+  return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+}
+
+function setStaticTexts() {
+  document.documentElement.lang = currentLang;
+  document.title = t("pageTitle");
+  titleEl.textContent = t("title");
+  subtitleEl.textContent = t("subtitle");
+  difficultyLabelEl.textContent = t("difficultyLabel");
+  languageLabelEl.textContent = t("languageLabel");
+  newGameBtn.textContent = t("newGame");
+  passBtn.textContent = t("pass");
+  undoBtn.textContent = t("undo");
+  canvas.setAttribute("aria-label", t("boardAria"));
+
+  for (const option of difficultyEl.options) {
+    if (option.value === "easy") option.textContent = t("difficultyEasy");
+    if (option.value === "medium") option.textContent = t("difficultyMedium");
+    if (option.value === "hard") option.textContent = t("difficultyHard");
+  }
+}
 
 function makeEmptyBoard() {
   return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(EMPTY));
@@ -160,9 +248,12 @@ function drawBoard() {
   }
 }
 
-function updateStatus(text) {
-  statusEl.textContent = text;
-  capturesEl.textContent = `提子：黑 ${captures.black} / 白 ${captures.white}`;
+function updateStatus(key, vars = {}) {
+  statusEl.textContent = t(key, vars);
+  capturesEl.textContent = t("captures", {
+    black: captures.black,
+    white: captures.white,
+  });
 }
 
 function xyFromEvent(evt) {
@@ -364,37 +455,40 @@ function territoryScore(src) {
   return {
     blackTotal,
     whiteTotal,
-    summary: `估算：黑 ${blackTotal.toFixed(1)}，白 ${whiteTotal.toFixed(1)}（白贴目 6.5）`,
   };
 }
 
 function finishGame() {
   gameOver = true;
   const score = territoryScore(board);
-  const winner = score.blackTotal > score.whiteTotal ? "黑棋（你）" : "白棋（AI）";
-  updateStatus(`对局结束，胜者：${winner}。${score.summary}`);
+  const winnerKey = score.blackTotal > score.whiteTotal ? "winnerBlack" : "winnerWhite";
+  updateStatus("gameOver", {
+    winner: t(winnerKey),
+    blackTotal: score.blackTotal.toFixed(1),
+    whiteTotal: score.whiteTotal.toFixed(1),
+  });
 }
 
 function aiTurn() {
   if (gameOver || turn !== WHITE) return;
-  updateStatus("AI 思考中...");
+  updateStatus("aiThinking");
   setTimeout(() => {
     const move = selectAiMove();
     if (!move) {
       consecutivePasses++;
       turn = BLACK;
       if (consecutivePasses >= 2) finishGame();
-      else updateStatus("AI 停一手，你的回合");
+      else updateStatus("aiPassYourTurn");
       return;
     }
     const ok = applyMove(move.x, move.y, WHITE);
     if (!ok) {
       consecutivePasses++;
       turn = BLACK;
-      updateStatus("AI 无合法落点，停一手。你的回合");
+      updateStatus("aiNoLegal");
       return;
     }
-    updateStatus("你的回合");
+    updateStatus("yourTurn");
   }, 180);
 }
 
@@ -407,7 +501,7 @@ function newGame() {
   history = [];
   boardHashes = new Set([boardHash(board)]);
   drawBoard();
-  updateStatus("你的回合");
+  updateStatus("yourTurn");
 }
 
 canvas.addEventListener("click", (evt) => {
@@ -416,10 +510,10 @@ canvas.addEventListener("click", (evt) => {
   if (!inBounds(x, y)) return;
   const ok = applyMove(x, y, BLACK);
   if (!ok) {
-    updateStatus("该点不可落子（禁手、打劫或已有棋子）");
+    updateStatus("invalidMove");
     return;
   }
-  updateStatus("AI 思考中...");
+  updateStatus("aiThinking");
   aiTurn();
 });
 
@@ -442,13 +536,23 @@ undoBtn.addEventListener("click", () => {
   captures = prev.captures;
   boardHashes = prev.boardHashes;
   drawBoard();
-  updateStatus(gameOver ? "已回退（对局已结束）" : turn === BLACK ? "你的回合" : "AI 回合");
+  updateStatus(gameOver ? "undoEnded" : turn === BLACK ? "yourTurn" : "aiTurn");
 });
 
 newGameBtn.addEventListener("click", newGame);
 difficultyEl.addEventListener("change", () => {
-  updateStatus(`难度已切换为：${difficultyEl.options[difficultyEl.selectedIndex].text}`);
+  updateStatus("difficultySwitched", {
+    level: difficultyEl.options[difficultyEl.selectedIndex].text,
+  });
   if (!gameOver && turn === WHITE) aiTurn();
 });
 
+languageEl.addEventListener("change", () => {
+  currentLang = languageEl.value;
+  setStaticTexts();
+  if (gameOver) finishGame();
+  else updateStatus(turn === BLACK ? "yourTurn" : "aiTurn");
+});
+
+setStaticTexts();
 newGame();
