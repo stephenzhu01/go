@@ -1,0 +1,95 @@
+:root {
+  --bg: #f2eadc;
+  --panel: #fffdf6;
+  --line: #3b2f20;
+  --text: #1f1a14;
+  --accent: #9c5b2f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top, #fff7e8 0%, var(--bg) 60%);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px 16px 28px;
+}
+
+.topbar h1 {
+  margin: 0 0 6px;
+  font-size: 1.8rem;
+}
+
+.topbar p {
+  margin: 0 0 18px;
+  opacity: 0.8;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.controls select,
+.controls button {
+  border: 1px solid #c9bba2;
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+}
+
+.controls button {
+  cursor: pointer;
+}
+
+.controls button:hover {
+  border-color: var(--accent);
+}
+
+.status-panel {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid #d7c9af;
+}
+
+.status-panel p {
+  margin: 4px 0;
+}
+
+.board-wrap {
+  width: 100%;
+  overflow: auto;
+  padding-bottom: 8px;
+}
+
+#board {
+  display: block;
+  margin: 0 auto;
+  background: #d9a967;
+  border: 2px solid #7f5524;
+  border-radius: 6px;
+  max-width: 100%;
+  height: auto;
+  touch-action: manipulation;
+}
+
+@media (max-width: 820px) {
+  #board {
+    width: 94vw;
+  }
+}

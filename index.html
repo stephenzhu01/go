@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>围棋三难度</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <h1>围棋（人机对战）</h1>
+        <p>黑棋先手（你），白棋后手（AI）</p>
+      </header>
+
+      <section class="controls">
+        <label for="difficulty">难度</label>
+        <select id="difficulty">
+          <option value="easy">简单</option>
+          <option value="medium" selected>中等</option>
+          <option value="hard">困难</option>
+        </select>
+        <button id="new-game" type="button">新游戏</button>
+        <button id="pass-btn" type="button">停一手</button>
+        <button id="undo-btn" type="button">悔棋</button>
+      </section>
+
+      <section class="status-panel">
+        <p id="status">你的回合</p>
+        <p id="captures">提子：黑 0 / 白 0</p>
+      </section>
+
+      <section class="board-wrap">
+        <canvas id="board" width="760" height="760" aria-label="围棋棋盘"></canvas>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
