@@ -29,6 +29,7 @@ let captures = { black: 0, white: 0 };
 let history = [];
 let boardHashes = new Set();
 let currentLang = languageEl.value;
+let aiThinkToken = 0;
 
 const I18N = {
   "zh-Hant": {
@@ -471,8 +472,12 @@ function finishGame() {
 
 function aiTurn() {
   if (gameOver || turn !== WHITE) return;
+  aiThinkToken += 1;
+  const token = aiThinkToken;
   updateStatus("aiThinking");
   setTimeout(() => {
+    if (token !== aiThinkToken) return;
+    if (gameOver || turn !== WHITE) return;
     const move = selectAiMove();
     if (!move) {
       consecutivePasses++;
@@ -493,6 +498,7 @@ function aiTurn() {
 }
 
 function newGame() {
+  aiThinkToken += 1;
   board = makeEmptyBoard();
   turn = BLACK;
   gameOver = false;
@@ -528,6 +534,7 @@ passBtn.addEventListener("click", () => {
 
 undoBtn.addEventListener("click", () => {
   if (!history.length) return;
+  aiThinkToken += 1;
   const prev = history.pop();
   board = prev.board;
   turn = prev.turn;
